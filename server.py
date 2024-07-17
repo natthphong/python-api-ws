@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import websockets
@@ -33,11 +34,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         length = int(self.headers['Content-Length'])
         data = self.rfile.read(length)
         payload = json.loads(data)
-        if self.path == "/account/create":
+        path = self.path
+        if path == "/account/create":
             self.accounts.append(payload)
             self._set_headers()
             response = {"message": "Account created", "account": payload}
-        elif self.path == "/loan":
+        elif path == "/loan":
             required_fields = {"totalLoan", "mrr", "mrrInAccount", "day"}
             if not all(field in payload for field in required_fields):
                 self._set_headers(400)
@@ -53,6 +55,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 async def websocket_handler(websocket, path):
+    print(f"path: {path}")
+    if path != "/ws":
+        await websocket.send(json.dumps({"error": "Invalid path"}))
+        return
+
     async def send_periodic_messages():
         while True:
             msg = json.dumps({"message": "test"})
@@ -88,6 +95,7 @@ async def main():
     http_server = loop.run_in_executor(None, run)
     websocket_server = run_websocket_server()
     await asyncio.gather(http_server, websocket_server)
+
 
 if __name__ == '__main__':
     asyncio.run(main())
