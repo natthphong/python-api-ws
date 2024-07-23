@@ -4,6 +4,8 @@ import datetime
 
 def loan_calculation(payload):
     total_loan = payload['totalLoan']
+    if total_loan <= 0:
+        raise ValueError("Total loan must be positive")
     mrr = payload['mrr']
     mrr_in_account = payload['mrrInAccount']
     day = payload['day']
@@ -17,6 +19,7 @@ def loan_calculation(payload):
     current_month = current_date.month
     current_year = current_date.year
     current_day = current_date.day
+    print(f"Current month: {current_month}")
     last_day_current_month = calendar.monthrange(current_year, current_month)[1]
     last_day_prev_month = calendar.monthrange(current_year, current_month - 1)[1]
     total_interest = (total_loan * (mrr / 100)) / 12
